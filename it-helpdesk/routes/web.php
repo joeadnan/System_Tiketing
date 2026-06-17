@@ -42,4 +42,26 @@ Route::middleware(['auth'])->group(function () {
         ->name('reports.tickets');
 });
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+
+
+Route::get('/cron/check-sla', function (Request $request) {
+    $authHeader = $request->header('Authorization');
+    $expected = 'Bearer ' . env('CRON_SECRET');
+
+    abort_unless(
+        env('CRON_SECRET') && hash_equals($expected, (string) $authHeader),
+        401
+    );
+
+    Artisan::call('tickets:check-sla');
+
+    return response()->json([
+        'success' => true,
+        'message' => 'SLA check executed.',
+        'output' => Artisan::output(),
+    ]);
+});
+
 require __DIR__ . '/auth.php';
